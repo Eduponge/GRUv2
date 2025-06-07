@@ -1,8 +1,6 @@
 package com.flightaware.aeroapps;
 
-//CHECKSTYLE.OFF: AvoidStarImport
 import static spark.Spark.*;
-//CHECKSTYLE.ON: AvoidStarImport
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,8 +31,6 @@ public class App {
 
     static ObjectMapper mapper = new ObjectMapper();
 
-    // Cache of API resources to prevent excessive AeroAPI queries on page refresh
-    // A cache get for a missing entry will return an empty object instance
     static LoadingCache<String, ArrayNode> CACHE = Caffeine.newBuilder()
         .expireAfterWrite(CACHE_TIME, TimeUnit.SECONDS)
         .build(key -> mapper.createArrayNode());
@@ -45,22 +41,13 @@ public class App {
 
     static final Logger logger = LoggerFactory.getLogger("App");
 
-    // SparkJava configuration and routes //
-
-    /**
-    * The configuration and routes offered by the backend.
-     */
     public static void main(String[] args) {
-        // Change from default port 4567
         port(5000);
 
-        // Sets default response type header for all routes to json
         before((req, res) -> res.type("application/json"));
 
-        // Change default HTML 404 response to JSON
         notFound((req, res) -> "{\"error\":\"Not Found\"}");
 
-        // Actual fids endpoints
         get("/positions/:faFlightId", (req, res) ->
             get_positions(req.params("faFlightId")), new RenderJson()
         );
@@ -91,10 +78,6 @@ public class App {
     }
 
     static class RenderJson implements spark.ResponseTransformer {
-
-        /**
-        * Override Spark's default endpoint render to handle JsonNode.
-        */
         @Override
         public String render(Object node) {
             String json = "";
@@ -112,13 +95,6 @@ public class App {
         }
     }
 
-    // Internal support functions //
-    /**
-    * Makes an AeroAPI request.
-    *
-    * @param resource an AeroAPI resource URI
-    * @return         An AeroAPI response body
-    */
     private static JsonNode aeroapi_get(String resource) {
         int code = 500;
         ObjectNode result = mapper.createObjectNode();
@@ -128,14 +104,11 @@ public class App {
             .url(String.format("%s%s", AEROAPI_BASE_URL, resource))
             .build();
 
-        // Both execute() and readTree() can raise exceptions that must be handled
         try {
             Response response = client.newCall(request).execute();
             code = response.code();
             result = (ObjectNode) mapper.readTree(response.body().string());
         } catch (Exception e) {
-            // AeroAPI will normally produce useful errors
-            // In the case of a caught error emulate this style
             result.put("title", e.getClass().getSimpleName());
             result.put("detail", e.getMessage());
         }
@@ -144,13 +117,6 @@ public class App {
         return result;
     }
 
-    /**
-    * Common tasks involved with a boards (airports) request.
-    *
-    * @param apiResource  The API resource URI
-    * @param apiObjectKey The top level key expected api response object
-    * @return             The processed flights object
-     */
     private static JsonNode boards_request(String apiResource, String apiObjectKey) {
         ArrayNode flights = mapper.createArrayNode();
         ArrayNode idList = CACHE.get(apiResource);
@@ -188,28 +154,12 @@ public class App {
         return flights;
     }
 
-    /**
-    * Formats an AeroAPI boards or flights/{id} response to maintain
-    * parity with Firestarter and work in common fids_frontend.
-    *
-    * @param rawPayload A raw AeroAPI involved as a JsonNode object
-    * @param topLevel   The top level key in the JsonNode object
-    * @return           A formatted JSON response body
-    */
     private static JsonNode format_response(JsonNode rawPayload, String topLevel) {
 
         List<String> missing = Arrays.asList(
-            "actual_runway_off",
-            "actual_runway_on",
-            "cruising_altitude",
-            "filed_ground_speed",
-            "hexid",
-            "predicted_in",
-            "predicted_off",
-            "predicted_on",
-            "predicted_out",
-            "status",
-            "true_cancel"
+            "actual_runway_off", "actual_runway_on", "cruising_altitude", "filed_ground_speed",
+            "hexid", "predicted_in", "predicted_off", "predicted_on", "predicted_out",
+            "status", "true_cancel"
         );
         List<String> origDest = Arrays.asList("destination", "origin");
         Map<String, String> rename = Map.of(
@@ -225,27 +175,17 @@ public class App {
         ArrayNode formatted = mapper.createArrayNode();
 
         rawPayload.get(topLevel).forEach(entry -> {
-
-            // Cast to ObjectNode for easier manipulation
             ObjectNode node = (ObjectNode) entry;
-
-            // Pad out missing keys to keep data structure in parity with firestarter
             missing.forEach(key -> node.putNull(key));
-
-            // Flatten orig/dest object to a key:value
             origDest.forEach(key ->
                 node.put(key, node.get(key).get("code"))
             );
-
-            // Rename keys for parity with firestarter
             rename.forEach((key, value) ->
                 node.put(value, node.remove(key))
             );
-
             formatted.add(node);
         });
 
-        // Flights should return just the object, not a list containing one object
         if (topLevel == "flights") {
             return formatted.get(0);
         }
@@ -253,14 +193,6 @@ public class App {
         return formatted;
     }
 
-
-    // Endpoint specific functions //
-    /**
-    * Gets the positions of a given flight.
-    *
-    * @param faFlightId the FlightAware Flight ID to look up
-    * @return           JSON flight information
-    */
     private static JsonNode get_positions(String faFlightId) {
         String apiResource = String.format("/flights/%s/track", faFlightId);
         ArrayNode postions = CACHE.get(apiResource);
@@ -283,12 +215,6 @@ public class App {
         return postions;
     }
 
-    /**
-    * Gets the details of a given flight.
-    *
-    * @param faFlightId The FlightAware Flight ID to look up
-    * @return           JSON flight information
-    */
     private static JsonNode get_flight(String faFlightId) {
         String apiResource = String.format("/flights/%s", faFlightId);
         ObjectNode flight = FLIGHT_CACHE.get(faFlightId);
@@ -311,11 +237,6 @@ public class App {
         return flight;
     }
 
-    /**
-    * Gets the details of a random flight.
-    *
-    * @return JSON flight information
-    */
     private static JsonNode get_flight_random() {
         String apiResource = "/flights/search?query=-inAir 1";
         ArrayNode flights = CACHE.get(apiResource);
@@ -341,12 +262,6 @@ public class App {
         return get_flight(flights.get(rand.nextInt(flights.size())).asText());
     }
 
-
-    /**
-    * Gets the busiest airports by cancellation volume.
-    *
-    * @return JSON array of airport codes
-    */
     private static JsonNode get_busiest_airports() {
         String apiResource = "/disruption_counts/origin";
         ArrayNode airports = CACHE.get(apiResource);
@@ -371,56 +286,26 @@ public class App {
         return airports;
     }
 
-    /**
-    * Get a list of arrivals for a certain airport.
-    *
-    * @param  airport The airport code to fetch arrivals for
-    * @return         JSON array of airport codes
-    */
     private static JsonNode airport_arrivals(String airport) {
         String apiResource = String.format("/airports/%s/flights/arrivals", airport);
         return boards_request(apiResource, "arrivals");
     }
 
-    /**
-    * Get a list of departures for a certain airport.
-    *
-    * @param  airport The airport code to fetch departures for
-    * @return         JSON array of airport codes
-    */
     private static JsonNode airport_departures(String airport) {
         String apiResource = String.format("/airports/%s/flights/departures", airport);
         return boards_request(apiResource, "departures");
     }
 
-    /**
-    * "Get a list of flights enroute to a certain airport.
-    *
-    * @param  airport The airport code to fetch enroute for
-    * @return         JSON array of airport codes
-    */
     private static JsonNode airport_enroute(String airport) {
         String apiResource = String.format("/airports/%s/flights/scheduled_arrivals", airport);
         return boards_request(apiResource, "scheduled_arrivals");
     }
 
-    /**
-    * Get a list of scheduled flights from a certain airport.
-    *
-    * @param  airport The airport code to fetch scheduled for
-    * @return         JSON array of airport codes
-    */
     private static JsonNode airport_scheduled(String airport) {
         String apiResource = String.format("/airports/%s/flights/scheduled_departures", airport);
         return boards_request(apiResource, "scheduled_departures");
     }
 
-    /**
-    * Get a static map image of the current flight.
-    *
-    * @param  faFlightId The flight code to fetch a map image for
-    * @return            Base64 representation of a png map tile
-    */
     private static String get_map(String faFlightId) {
         String apiResource = String.format("/flights/%s/map", faFlightId);
         ArrayNode map = CACHE.get(apiResource);
