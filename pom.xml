@@ -6,7 +6,6 @@
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
   <name>aeroapps</name>
-  <url>http://maven.apache.org</url>
   <properties>
     <maven.compile.release>11</maven.compile.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
