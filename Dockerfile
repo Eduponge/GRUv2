@@ -1,16 +1,10 @@
-FROM maven:3.8.4-openjdk-11-slim
+FROM maven:3.8.4-openjdk-11-slim AS build
+WORKDIR /app
+COPY . /app
+RUN mvn clean package -DskipTests
 
-LABEL org.opencontainers.image.source=https://github.com/Eduponge/GRU3
-
-RUN id -u aeroapps || useradd -u 8081 aeroapps -c "AEROAPPS User" -m -s /bin/sh
-USER aeroapps
-WORKDIR /home/aeroapps
-
-COPY --chown=aeroapps backend/java/pom.xml .
-COPY --chown=aeroapps backend/java/checkstyle.xml .
-RUN ["mvn", "dependency:resolve", "verify"]
-
-COPY --chown=aeroapps backend/java/src src/
-RUN ["mvn", "package"]
-
-CMD ["java", "-jar", "target/aeroapps-backend-jar-with-dependencies.jar"]
+FROM openjdk:11-jre-slim
+WORKDIR /app
+COPY --from=build /app/target/aeroapps-backend-jar-with-dependencies.jar /app/app.jar
+EXPOSE 5000
+CMD ["java", "-jar", "/app/app.jar"]
