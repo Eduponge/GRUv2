@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Chegadas - Aeroporto SBGR</title>
+  <title>Chegadas SBGR - Direto FlightAware API</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 40px; }
     .container { max-width: 1000px; margin: auto; background: #fff; box-shadow: 0 0 10px #ddd; padding: 30px; border-radius: 12px; }
@@ -13,13 +13,16 @@
     tr:nth-child(even) { background: #f1f2f6; }
     .loading { color: #888; }
     .error { color: red; }
+    #api-key { width: 350px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Chegadas no Aeroporto SBGR</h1>
-    <p>Voos chegando em SBGR (Guarulhos). Dados em tempo real.</p>
-    <div id="message" class="loading">Carregando...</div>
+    <h1>Chegadas no Aeroporto SBGR (FlightAware API)</h1>
+    <p>Digite sua <b>API Key</b> da FlightAware AeroAPI para visualizar as chegadas em SBGR.</p>
+    <input type="password" id="api-key" placeholder="Cole sua x-apikey aqui">
+    <button onclick="carregarChegadas()">Buscar chegadas</button>
+    <div id="message" class="loading"></div>
     <table id="flights-table" style="display:none;">
       <thead>
         <tr>
