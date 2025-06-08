@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>GRUv2 - Documentação Java</title>
+    <title>GRUv2 - API FlightAware</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background: #f8f8f8; }
         pre { background: #eee; padding: 16px; border-radius: 8px; overflow-x: auto; }
@@ -10,100 +10,46 @@
         .container { max-width: 900px; margin: auto; background: #fff; box-shadow: 0 0 10px #ddd; padding: 30px; border-radius: 12px; }
         a { color: #2980b9; text-decoration: none; }
         a:hover { text-decoration: underline; }
+        code { color: #2d3436; }
+        ul { margin-bottom: 2em; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>GRUv2 - Consulta de código Java</h1>
-        <p>Este site apresenta o conteúdo da classe principal do projeto.</p>
-        <h2><a href="https://github.com/Eduponge/GRUv2/blob/main/src/main/java/com/flightaware/aeroapps/App.java" target="_blank">App.java</a></h2>
-        <pre>
-package com.flightaware.aeroapps;
+        <h1>GRUv2 - API FlightAware</h1>
+        <p>Esta aplicação expõe uma API REST para consultar informações de voos, aeroportos e posições usando a <a href="https://flightaware.com/commercial/aeroapi/" target="_blank">FlightAware AeroAPI</a>.</p>
+        <h2>Endpoints disponíveis</h2>
+        <ul>
+            <li><code>GET /positions/:faFlightId</code> — Consulta as posições de um voo pelo ID.</li>
+            <li><code>GET /flights/</code> — Busca um voo aleatório.</li>
+            <li><code>GET /flights/:faFlightId</code> — Consulta detalhes de um voo pelo ID.</li>
+            <li><code>GET /airports/</code> — Lista os aeroportos mais movimentados.</li>
+            <li><code>GET /airports/:airport/arrivals</code> — Lista chegadas em um aeroporto.</li>
+            <li><code>GET /airports/:airport/departures</code> — Lista partidas em um aeroporto.</li>
+            <li><code>GET /airports/:airport/enroute</code> — Lista voos em rota para um aeroporto.</li>
+            <li><code>GET /airports/:airport/scheduled</code> — Lista voos agendados para um aeroporto.</li>
+            <li><code>GET /map/:faFlightId</code> — Exibe o mapa de um voo.</li>
+        </ul>
 
-import static spark.Spark.*;
+        <h2>Exemplo de uso</h2>
+        <p>Para consultar posições de um voo, faça uma requisição GET para:</p>
+        <pre><code>/positions/ID_DO_VOO</code></pre>
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+        <h2>Configuração</h2>
+        <ul>
+            <li><b>PORT</b>: Porta onde a aplicação será executada (padrão: 10000)</li>
+            <li><b>CACHE_TIME</b>: Tempo de cache das consultas (padrão: 60s)</li>
+            <li><b>AEROAPI_KEY</b>: Chave de API da FlightAware (deve ser definida nas variáveis de ambiente)</li>
+        </ul>
 
-public class App {
+        <h2>Mais informações</h2>
+        <ul>
+            <li><a href="https://github.com/Eduponge/GRUv2/blob/main/src/main/java/com/flightaware/aeroapps/App.java" target="_blank">Ver código fonte principal (App.java)</a></li>
+            <li><a href="https://flightaware.com/commercial/aeroapi/" target="_blank">Documentação oficial do FlightAware AeroAPI</a></li>
+        </ul>
 
-    static String AEROAPI_BASE_URL = "https://aeroapi.flightaware.com/aeroapi";
-    static String AEROAPI_KEY = System.getenv("AEROAPI_KEY");
-
-    // Robust environment variable parsing with defaults
-    public static final int PORT = parseEnvInt("PORT", 10000); // default Render port
-    static int CACHE_TIME = parseEnvInt("CACHE_TIME", 60);     // default cache time in seconds
-
-    static final OkHttpClient client = new OkHttpClient();
-
-    static ObjectMapper mapper = new ObjectMapper();
-
-    static LoadingCache<String, ArrayNode> CACHE = Caffeine.newBuilder()
-        .expireAfterWrite(CACHE_TIME, TimeUnit.SECONDS)
-        .build(key -> mapper.createArrayNode());
-
-    static LoadingCache<String, ObjectNode> FLIGHT_CACHE = Caffeine.newBuilder()
-        .expireAfterWrite(CACHE_TIME, TimeUnit.SECONDS)
-        .build(key -> mapper.createObjectNode());
-
-    static final Logger logger = LoggerFactory.getLogger("App");
-
-    public static void main(String[] args) {
-        port(PORT); // use the robust PORT
-
-        before((req, res) -> res.type("application/json"));
-
-        notFound((req, res) -> "{\"error\":\"Not Found\"}");
-
-        get("/positions/:faFlightId", (req, res) ->
-            get_positions(req.params("faFlightId")), new RenderJson()
-        );
-        get("/flights/", (req, res) ->
-            get_flight_random(), new RenderJson()
-        );
-        get("/flights/:faFlightId", (req, res) ->
-            get_flight(req.params("faFlightId")), new RenderJson()
-        );
-        get("/airports/", (req, res) ->
-            get_busiest_airports(), new RenderJson()
-        );
-        get("/airports/:airport/arrivals", (req, res) ->
-            airport_arrivals(req.params("airport")), new RenderJson()
-        );
-        get("/airports/:airport/departures", (req, res) ->
-            airport_departures(req.params("airport")), new RenderJson()
-        );
-        get("/airports/:airport/enroute", (req, res) ->
-            airport_enroute(req.params("airport")), new RenderJson()
-        );
-        get("/airports/:airport/scheduled", (req, res) ->
-            airport_scheduled(req.params("airport")), new RenderJson()
-        );
-        get("/map/:faFlightId", (req, res) ->
-            get_map(req.params("faFlightId"))
-        );
-    }
-    ...
-        </pre>
-        <p><em>Este é um trecho do código. Para visualizar todos os arquivos Java do projeto,<br>
-        <a href="https://github.com/Eduponge/GRUv2/search?l=Java" target="_blank">clique aqui</a>.</em></p>
+        <hr>
+        <p>Este index foi gerado automaticamente para facilitar a compreensão da API disponível neste projeto.</p>
     </div>
 </body>
 </html>
