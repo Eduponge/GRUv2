@@ -8,3 +8,4 @@ WORKDIR /app
 COPY --from=build /app/target/aeroapps-backend-jar-with-dependencies.jar /app/app.jar
 EXPOSE 5000
 CMD ["java", "-jar", "/app/app.jar"]
+“corrige Dockerfile”
