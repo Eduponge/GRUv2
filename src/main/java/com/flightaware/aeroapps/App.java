@@ -26,8 +26,11 @@ public class App {
 
     static String AEROAPI_BASE_URL = "https://aeroapi.flightaware.com/aeroapi";
     static String AEROAPI_KEY = System.getenv("AEROAPI_KEY");
-    public static final int PORT = Integer.parseInt(System.getenv("PORT"));
-    static int CACHE_TIME = Integer.parseInt(System.getenv("CACHE_TIME"));
+
+    // Robust environment variable parsing with defaults
+    public static final int PORT = parseEnvInt("PORT", 10000); // default Render port
+    static int CACHE_TIME = parseEnvInt("CACHE_TIME", 60);     // default cache time in seconds
+
     static final OkHttpClient client = new OkHttpClient();
 
     static ObjectMapper mapper = new ObjectMapper();
@@ -43,7 +46,7 @@ public class App {
     static final Logger logger = LoggerFactory.getLogger("App");
 
     public static void main(String[] args) {
-        port(5000);
+        port(PORT); // use the robust PORT
 
         before((req, res) -> res.type("application/json"));
 
@@ -76,6 +79,19 @@ public class App {
         get("/map/:faFlightId", (req, res) ->
             get_map(req.params("faFlightId"))
         );
+    }
+
+    // Utility method for robust integer parsing from env
+    private static int parseEnvInt(String var, int defaultValue) {
+        String value = System.getenv(var);
+        if (value != null) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                logger.warn("Environment variable {} is not a valid integer (value: '{}'), using default: {}", var, value, defaultValue);
+            }
+        }
+        return defaultValue;
     }
 
     static class RenderJson implements spark.ResponseTransformer {
