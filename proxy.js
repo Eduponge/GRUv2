@@ -2,7 +2,7 @@ const express = require('express');
 const fetch = require('node-fetch');
 const app = express();
 
-const API_KEY = 'SUA_API_KEY_AQUI'; // nunca exponha esta chave no frontend
+const API_KEY = 'SUA_API_KEY_AQUI'; // coloque sua chave da FlightAware aqui
 const PORT = 3000;
 
 app.get('/api/arrivals', async (req, res) => {
