@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Chegadas SBGR - Direto FlightAware API</title>
+  <title>Chegadas SBGR - FlightAware (via Backend)</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 40px; }
     .container { max-width: 1000px; margin: auto; background: #fff; box-shadow: 0 0 10px #ddd; padding: 30px; border-radius: 12px; }
@@ -13,16 +13,13 @@
     tr:nth-child(even) { background: #f1f2f6; }
     .loading { color: #888; }
     .error { color: red; }
-    #api-key { width: 350px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Chegadas no Aeroporto SBGR (FlightAware API)</h1>
-    <p>Digite sua <b>API Key</b> da FlightAware AeroAPI para visualizar as chegadas em SBGR.</p>
-    <input type="password" id="api-key" placeholder="Cole sua x-apikey aqui">
-    <button onclick="carregarChegadas()">Buscar chegadas</button>
-    <div id="message" class="loading"></div>
+    <h1>Chegadas no Aeroporto SBGR (FlightAware via backend)</h1>
+    <p>Voos chegando em SBGR (Guarulhos) via proxy backend local.</p>
+    <div id="message" class="loading">Carregando...</div>
     <table id="flights-table" style="display:none;">
       <thead>
         <tr>
@@ -38,6 +35,53 @@
       <tbody id="flights-body"></tbody>
     </table>
   </div>
-  <script src="script.js"></script>
+  <script>
+  const API_URL = 'http://localhost:3000/api/arrivals';
+
+  async function carregarChegadas() {
+    const message = document.getElementById('message');
+    const table = document.getElementById('flights-table');
+    const tbody = document.getElementById('flights-body');
+    message.textContent = 'Carregando...';
+    message.className = 'loading';
+    table.style.display = 'none';
+    tbody.innerHTML = '';
+
+    try {
+      const resposta = await fetch(API_URL);
+      if (!resposta.ok) throw new Error('Erro ao consultar API');
+      const dados = await resposta.json();
+
+      // Os voos estão em dados.arrivals (conforme padrão AeroAPI)
+      const voos = dados.arrivals || [];
+      if (voos.length === 0) {
+        message.textContent = 'Nenhuma chegada encontrada.';
+        return;
+      }
+
+      for (const voo of voos) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${voo.ident_icao ?? '-'}</td>
+          <td>${voo.registration ?? '-'}</td>
+          <td>${voo.aircraft_type ?? '-'}</td>
+          <td>${voo.origin?.code_iata ?? '-'}</td>
+          <td>${voo.scheduled_in ?? '-'}</td>
+          <td>${voo.estimated_in ?? '-'}</td>
+          <td>${voo.progress_percent != null ? voo.progress_percent + '%' : '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      message.textContent = '';
+      table.style.display = '';
+    } catch (erro) {
+      message.textContent = 'Erro ao carregar dados: ' + erro.message;
+      message.className = 'error';
+    }
+  }
+
+  window.onload = carregarChegadas;
+  </script>
 </body>
 </html>
