@@ -26,6 +26,7 @@ public class App {
 
     static String AEROAPI_BASE_URL = "https://aeroapi.flightaware.com/aeroapi";
     static String AEROAPI_KEY = System.getenv("AEROAPI_KEY");
+    public static final int PORT = Integer.parseInt(System.getenv("PORT"));
     static int CACHE_TIME = Integer.parseInt(System.getenv("CACHE_TIME"));
     static final OkHttpClient client = new OkHttpClient();
 
