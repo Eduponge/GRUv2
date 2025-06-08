@@ -1,55 +1,40 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>GRUv2 - API FlightAware</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f8f8f8; }
-        pre { background: #eee; padding: 16px; border-radius: 8px; overflow-x: auto; }
-        h1, h2 { color: #0a3d62; }
-        .container { max-width: 900px; margin: auto; background: #fff; box-shadow: 0 0 10px #ddd; padding: 30px; border-radius: 12px; }
-        a { color: #2980b9; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        code { color: #2d3436; }
-        ul { margin-bottom: 2em; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Chegadas - Aeroporto SBGR</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 40px; }
+    .container { max-width: 1000px; margin: auto; background: #fff; box-shadow: 0 0 10px #ddd; padding: 30px; border-radius: 12px; }
+    h1 { color: #0a3d62; }
+    table { border-collapse: collapse; width: 100%; margin-top: 24px; }
+    th, td { border: 1px solid #b2bec3; padding: 8px 12px; text-align: left; }
+    th { background: #dfe6e9; }
+    tr:nth-child(even) { background: #f1f2f6; }
+    .loading { color: #888; }
+    .error { color: red; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>GRUv2 - API FlightAware</h1>
-        <p>Esta aplicação expõe uma API REST para consultar informações de voos, aeroportos e posições usando a <a href="https://flightaware.com/commercial/aeroapi/" target="_blank">FlightAware AeroAPI</a>.</p>
-        <h2>Endpoints disponíveis</h2>
-        <ul>
-            <li><code>GET /positions/:faFlightId</code> — Consulta as posições de um voo pelo ID.</li>
-            <li><code>GET /flights/</code> — Busca um voo aleatório.</li>
-            <li><code>GET /flights/:faFlightId</code> — Consulta detalhes de um voo pelo ID.</li>
-            <li><code>GET /airports/</code> — Lista os aeroportos mais movimentados.</li>
-            <li><code>GET /airports/:airport/arrivals</code> — Lista chegadas em um aeroporto.</li>
-            <li><code>GET /airports/:airport/departures</code> — Lista partidas em um aeroporto.</li>
-            <li><code>GET /airports/:airport/enroute</code> — Lista voos em rota para um aeroporto.</li>
-            <li><code>GET /airports/:airport/scheduled</code> — Lista voos agendados para um aeroporto.</li>
-            <li><code>GET /map/:faFlightId</code> — Exibe o mapa de um voo.</li>
-        </ul>
-
-        <h2>Exemplo de uso</h2>
-        <p>Para consultar posições de um voo, faça uma requisição GET para:</p>
-        <pre><code>/positions/ID_DO_VOO</code></pre>
-
-        <h2>Configuração</h2>
-        <ul>
-            <li><b>PORT</b>: Porta onde a aplicação será executada (padrão: 10000)</li>
-            <li><b>CACHE_TIME</b>: Tempo de cache das consultas (padrão: 60s)</li>
-            <li><b>AEROAPI_KEY</b>: Chave de API da FlightAware (deve ser definida nas variáveis de ambiente)</li>
-        </ul>
-
-        <h2>Mais informações</h2>
-        <ul>
-            <li><a href="https://github.com/Eduponge/GRUv2/blob/main/src/main/java/com/flightaware/aeroapps/App.java" target="_blank">Ver código fonte principal (App.java)</a></li>
-            <li><a href="https://flightaware.com/commercial/aeroapi/" target="_blank">Documentação oficial do FlightAware AeroAPI</a></li>
-        </ul>
-
-        <hr>
-        <p>Este index foi gerado automaticamente para facilitar a compreensão da API disponível neste projeto.</p>
-    </div>
+  <div class="container">
+    <h1>Chegadas no Aeroporto SBGR</h1>
+    <p>Voos chegando em SBGR (Guarulhos). Dados em tempo real.</p>
+    <div id="message" class="loading">Carregando...</div>
+    <table id="flights-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>Ident ICAO</th>
+          <th>Matrícula</th>
+          <th>Tipo Aeronave</th>
+          <th>Origem (IATA)</th>
+          <th>Previsto</th>
+          <th>Estimado</th>
+          <th>Progresso (%)</th>
+        </tr>
+      </thead>
+      <tbody id="flights-body"></tbody>
+    </table>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
