@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Chegadas SBGR - FlightAware (via Backend Proxy)</title>
+  <title>Chegadas SBGR - FlightAware (via Backend Java)</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 40px; }
     .container { max-width: 1000px; margin: auto; background: #fff; box-shadow: 0 0 10px #ddd; padding: 30px; border-radius: 12px; }
@@ -17,13 +17,13 @@
 </head>
 <body>
   <div class="container">
-    <h1>Chegadas no Aeroporto SBGR (FlightAware via Backend Proxy)</h1>
-    <p>Voos chegando em SBGR (Guarulhos) via backend local.</p>
+    <h1>Chegadas no Aeroporto SBGR (FlightAware via Backend Java)</h1>
+    <p>Voos chegando em SBGR (Guarulhos) via backend Java local.</p>
     <div id="message" class="loading">Carregando...</div>
     <table id="flights-table" style="display:none;">
       <thead>
         <tr>
-          <th>Ident ICAO</th>
+          <th>Número do Voo</th>
           <th>Matrícula</th>
           <th>Tipo Aeronave</th>
           <th>Origem (IATA)</th>
@@ -36,8 +36,8 @@
     </table>
   </div>
   <script>
-  // Certifique-se que seu proxy está rodando em localhost:3000
-  const API_URL = 'http://localhost:3000/api/arrivals';
+  // Altere aqui se o backend estiver rodando em outro host ou porta
+  const API_URL = 'http://localhost:10000/airports/SBGR/arrivals';
 
   async function carregarChegadas() {
     const message = document.getElementById('message');
@@ -50,12 +50,11 @@
 
     try {
       const resposta = await fetch(API_URL);
-      if (!resposta.ok) throw new Error('Erro ao consultar API');
-      const dados = await resposta.json();
+      if (!resposta.ok) throw new Error('Erro ao consultar API backend Java');
+      const voos = await resposta.json();
 
-      // Os voos estão em dados.arrivals (conforme padrão AeroAPI)
-      const voos = dados.arrivals || [];
-      if (voos.length === 0) {
+      // O backend Java retorna um array de voos
+      if (!Array.isArray(voos) || voos.length === 0) {
         message.textContent = 'Nenhuma chegada encontrada.';
         return;
       }
@@ -63,12 +62,12 @@
       for (const voo of voos) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${voo.ident_icao ?? '-'}</td>
+          <td>${voo.flight_number ?? '-'}</td>
           <td>${voo.registration ?? '-'}</td>
           <td>${voo.aircraft_type ?? '-'}</td>
-          <td>${voo.origin?.code_iata ?? '-'}</td>
-          <td>${voo.scheduled_in ?? '-'}</td>
-          <td>${voo.estimated_in ?? '-'}</td>
+          <td>${voo.origin ?? '-'}</td>
+          <td>${voo.scheduled_in ?? voo.scheduled_arrival ?? '-'}</td>
+          <td>${voo.estimated_in ?? voo.estimated_arrival ?? '-'}</td>
           <td>${voo.progress_percent != null ? voo.progress_percent + '%' : '-'}</td>
         `;
         tbody.appendChild(tr);
