@@ -1,4 +1,4 @@
-const API_ENDPOINT = "https://gruv2.onrender.com/";
+const API_ENDPOINT = "https://gruv2-faapi.up.railway.app/";
 
 async function carregarChegadas() {
   const message = document.getElementById('message');
