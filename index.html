@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Chegadas SBGR - FlightAware (via Proxy)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 40px; }
+    .container { max-width: 1000px; margin: auto; background: #fff; box-shadow: 0 0 10px #ddd; padding: 30px; border-radius: 12px; }
+    h1 { color: #0a3d62; }
+    table { border-collapse: collapse; width: 100%; margin-top: 24px; }
+    th, td { border: 1px solid #b2bec3; padding: 8px 12px; text-align: left; }
+    th { background: #dfe6e9; }
+    tr:nth-child(even) { background: #f1f2f6; }
+    .loading { color: #888; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Chegadas no Aeroporto SBGR (FlightAware via Proxy)</h1>
+    <p>Voos chegando em SBGR (Guarulhos) via backend seguro.</p>
+    <div id="message" class="loading">Carregando...</div>
+    <table id="flights-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>Número do Voo</th>
+          <th>Matrícula</th>
+          <th>Tipo Aeronave</th>
+          <th>Origem (IATA)</th>
+          <th>Previsto</th>
+          <th>Estimado</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="flights-body"></tbody>
+    </table>
+  </div>
+  <script>
+    const API_ENDPOINT = "https://gruv2-faapi.up.railway.app/api/chegadas";
+
+    async function carregarChegadas() {
+      const message = document.getElementById('message');
+      const table = document.getElementById('flights-table');
+      const tbody = document.getElementById('flights-body');
+      message.textContent = 'Carregando...';
+      message.className = 'loading';
+      table.style.display = 'none';
+      tbody.innerHTML = '';
+
+      try {
+        const resposta = await fetch(API_ENDPOINT);
+        if (!resposta.ok) throw new Error('Erro ao consultar API backend');
+        const data = await resposta.json();
+        const voos = data.flights || [];
+
+        if (voos.length === 0) {
+          message.textContent = 'Nenhuma chegada encontrada.';
+          return;
+        }
+
+        for (const voo of voos) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${voo.ident ?? '-'}</td>
+            <td>${voo.aircraft_registration ?? '-'}</td>
+            <td>${voo.aircraft_type ?? '-'}</td>
+            <td>${voo.origin?.code_iata ?? '-'}</td>
+            <td>${voo.scheduled_in ?? '-'}</td>
+            <td>${voo.estimated_in ?? '-'}</td>
+            <td>${voo.status ?? '-'}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        message.textContent = '';
+        table.style.display = '';
+      } catch (erro) {
+        message.textContent = 'Erro ao carregar dados: ' + erro.message;
+        message.className = 'error';
+      }
+    }
+
+    window.onload = carregarChegadas;
+  </script>
+</body>
+</html>
