@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Chegadas SBGR - FlightAware (via Proxy)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 40px; }
+    .container { max-width: 1000px; margin: auto; background: #fff; box-shadow: 0 0 10px #ddd; padding: 30px; border-radius: 12px; }
+    h1 { color: #0a3d62; }
+    table { border-collapse: collapse; width: 100%; margin-top: 24px; }
+    th, td { border: 1px solid #b2bec3; padding: 8px 12px; text-align: left; }
+    th { background: #dfe6e9; }
+    tr:nth-child(even) { background: #f1f2f6; }
+    .loading { color: #888; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Chegadas no Aeroporto SBGR (FlightAware via Proxy)</h1>
+    <p>Voos chegando em SBGR (Guarulhos) via backend seguro.</p>
+    <div id="message" class="loading">Carregando...</div>
+    <table id="flights-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>Número do Voo</th>
+          <th>Matrícula</th>
+          <th>Tipo Aeronave</th>
+          <th>Origem (IATA)</th>
+          <th>Previsto</th>
+          <th>Estimado</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="flights-body"></tbody>
+    </table>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
