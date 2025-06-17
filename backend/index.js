@@ -7,7 +7,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-app.use(cors());
+app.use(cors({
+  origin: "https://eduponge.github.io" // coloque o domínio do seu frontend aqui
+}));
 
 // Proxy endpoint para chegadas em SBGR
 app.get("/api/chegadas", async (req, res) => {
@@ -18,9 +20,11 @@ app.get("/api/chegadas", async (req, res) => {
       }
     });
 
-    // repassa status e dados brutos para o frontend
+    // Passa o status e os dados de volta ao frontend
     res.status(response.status);
-    response.body.pipe(res);
+    // Se o conteúdo for JSON, parse e envie como JSON
+    const data = await response.json();
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: "Erro ao consultar a AeroAPI", details: err.message });
   }
