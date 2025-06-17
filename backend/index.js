@@ -14,7 +14,7 @@ app.get("/api/chegadas", async (req, res) => {
   try {
     const response = await fetch("https://aeroapi.flightaware.com/aeroapi/airports/SBGR/flights/arrivals", {
       headers: {
-        "x-apikey": process.env.AEROAPI_KEY
+        "Authorization": `Bearer ${process.env.AEROAPI_KEY}`
       }
     });
 
